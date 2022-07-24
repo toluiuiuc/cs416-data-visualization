@@ -1,0 +1,129 @@
+\documentclass[10pt]{article}
+
+\usepackage{fullpage}
+\usepackage{setspace}
+\usepackage{parskip}
+\usepackage{titlesec}
+\usepackage[section]{placeins}
+\usepackage{xcolor}
+\usepackage{breakcites}
+\usepackage{lineno}
+\usepackage{hyphenat}
+
+
+
+
+
+\PassOptionsToPackage{hyphens}{url}
+\usepackage[colorlinks = true,
+            linkcolor = blue,
+            urlcolor  = blue,
+            citecolor = blue,
+            anchorcolor = blue]{hyperref}
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\@combinedblfloats{\box\@outputbox}{\unvbox\@outputbox}{}{%
+  \errmessage{\noexpand\@combinedblfloats could not be patched}%
+}%
+\makeatother
+
+
+\usepackage[round]{natbib}
+\let\cite\citep
+
+
+
+
+\renewenvironment{abstract}
+  {{\bfseries\noindent{\abstractname}\par\nobreak}\footnotesize}
+  {\bigskip}
+
+\titlespacing{\section}{0pt}{*3}{*1}
+\titlespacing{\subsection}{0pt}{*2}{*0.5}
+\titlespacing{\subsubsection}{0pt}{*1.5}{0pt}
+
+
+\usepackage{authblk}
+
+
+\usepackage{graphicx}
+\usepackage[space]{grffile}
+\usepackage{latexsym}
+\usepackage{textcomp}
+\usepackage{longtable}
+\usepackage{tabulary}
+\usepackage{booktabs,array,multirow}
+\usepackage{amsfonts,amsmath,amssymb}
+\providecommand\citet{\cite}
+\providecommand\citep{\cite}
+\providecommand\citealt{\cite}
+% You can conditionalize code for latexml or normal latex using this.
+\newif\iflatexml\latexmlfalse
+\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}%
+
+\AtBeginDocument{\DeclareGraphicsExtensions{.pdf,.PDF,.eps,.EPS,.png,.PNG,.tif,.TIF,.jpg,.JPG,.jpeg,.JPEG}}
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+
+
+
+
+
+
+
+
+
+
+\begin{document}
+
+\title{This is an example of an interactive D3.js visualization in Authorea}
+
+
+
+\author[1]{Josh Nicholson}%
+\affil[1]{Authorea Team}%
+
+
+\vspace{-1em}
+
+
+
+  \date{\today}
+
+
+\begingroup
+\let\center\flushleft
+\let\endcenter\endflushleft
+\maketitle
+\endgroup
+
+
+
+
+
+
+
+
+\sloppy
+
+
+Authorea allows researchers to include interactive figures from a
+variety of data analysis and visualization tools,
+including~\href{https://d3js.org/}{D3.js}. This document is intended to
+show how a D3.js file looks when embedded in an Authorea document. To
+embed your D3.js files in Authorea docs, you can follow step-by-step
+instructions~\href{https://support.authorea.com/en-us/article/inserting-an-interactive-figure-y32ne6/}{here.}\selectlanguage{english}
+\begin{figure}[h!]
+\begin{center}
+\includegraphics[width=0.70\columnwidth]{figures/d3js/static}
+\caption{{This is an example of a D3.js visualization
+{\label{327764}}%
+}}
+\end{center}
+\end{figure}
+
+\selectlanguage{english}
+\FloatBarrier
+\end{document}
+

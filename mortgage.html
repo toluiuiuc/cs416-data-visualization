@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+
+<head>
+    <title>How is the house market?</title>
+</head>
+<!-- Font Import-->
+<link href="https://fonts.googleapis.com/css2?family=Lato&display=swap" rel="stylesheet">
+<!-- Custom CSS Import-->
+<link href="web.css" rel="stylesheet" />
+
+<body>
+    <div align="center">
+        <h1>How is the house market?</h1>
+        <h2>Mortgage Interest Rate</h2>
+    </div>
+    <div id="message" class="content">
+        <p>
+            Ballooning mortgage costs, driven by skyrocketing prices and interest rates, have made mortgages less
+            affordable
+            than at any time. <br />
+            Demand for homes has pulled back in response, easing price growth, slowing sales and boosting
+            inventory.<br />
+            Mortgage rates shot up in early June, averaging 5.52%. <br />
+            Incomes are lagging further behind fast-rising mortgage costs, leading to the most significant affordability
+            challenges
+            in the past 15 years. <br />
+            The latest affordability data available from April shows monthly payments [<a
+                href="https://www.atlantafed.org/center-for-housing-and-policy/data-and-tools/home-ownership-affordability-monitor">1</a>]
+            taking about 28% of
+            homeowners’ monthly income — dangerously close to the 30% threshold, beyond which is considered a cost
+            burden.
+            <br />
+        </p>
+    </div>
+    <div class="container">
+        <div id="container_1" style="flex: 1;">
+        </div>
+        <div id="container_2" style="flex: 1;">
+        </div>
+    </div>
+    <div align="center">
+        <p></p>
+        <div class="pagination">
+            <a href="index.html">«</a>
+            <a href="index.html">1</a>
+            <a class="active" href="mortgage.html">2</a>
+            <a href="zhvi.html">3</a>
+            <a href="sales.html">4</a>
+            <a href="zori.html">5</a>
+            <a href="diy.html">6</a>
+            <a href="summary.html">7</a>
+            <a href="zhvi.html">»</a>
+        </div>
+    </div>
+
+    <!-- Load d3.js -->
+    <script src="https://d3js.org/d3.v4.js"></script>
+    <script src="http://d3js.org/topojson.v1.min.js"></script>
+    <script src="https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js"></script>
+    <script type="text/javascript">
+        // set the dimensions and margins of the graph
+        var margin = { top: 10, right: 30, bottom: 30, left: 60 },
+            width = 500 - margin.left - margin.right,
+            height = 300 - margin.top - margin.bottom;
+
+        // append the svg object to the body of the page
+        var svg_1 = d3.select("#container_1").classed("svg-content", true)
+            .append("svg")
+            .attr("preserveAspectRatio", "xMinYMin meet")
+            .attr("viewBox", "0 0 570 300")
+            .append("g")
+            .attr("transform",
+                "translate(" + margin.left + "," + margin.top + ")");
+
+        // append the svg object to the body of the page
+        var svg_2 = d3.select("#container_2").classed("svg-content", true)
+            .append("svg")
+            .attr("preserveAspectRatio", "xMinYMin meet")
+            .attr("viewBox", "0 0 570 300")
+            .append("g")
+            .attr("transform",
+                "translate(" + margin.left + "," + margin.top + ")");
+
+        //Read the data
+        d3.csv("proc_data/MORTGAGE30US_FIL.csv",
+
+            // When reading the csv, I must format variables:
+            function (d) {
+
+                var yearFormater = d3.timeFormat("%Y")
+                var monthFormater = d3.timeFormat("%b")
+                var dateParse = d3.timeParse("%Y-%m-%d")(d.date)
+
+                return {
+                    date: dateParse,
+                    date_year: yearFormater(dateParse),
+                    date_month: monthFormater(dateParse),
+                    value: d.value,
+                    value_prev: d.value_prev,
+                    yoy: d.yoy,
+                }
+            },
+
+            // Now I can use this dataset:
+            function (data) {
+
+                // Add X axis --> it is a date format
+                // x_1
+                var x_1 = d3.scaleTime()
+                    .domain(d3.extent(data, function (d) { return d.date; }))
+                    .range([0, width]);
+                svg_1.append("g")
+                    .attr("transform", "translate(0," + height + ")")
+                    .call(d3.axisBottom(x_1).ticks(6));
+
+                // x_2
+                var x_2 = d3.scaleTime()
+                    .domain(d3.extent(data, function (d) { if (d.date_year > 2018) { return d.date; } }))
+                    .range([0, width]);
+                svg_2.append("g")
+                    .attr("transform", "translate(0," + height + ")")
+                    .call(d3.axisBottom(x_2).ticks(6));
+
+                // Add Y axis
+                // y_1
+                var y_1 = d3.scaleLinear()
+                    .domain([0, d3.max(data, function (d) { return +d.value; })])
+                    .range([height, 0]);
+                svg_1.append("g")
+                    .call(d3.axisLeft(y_1).ticks(10, "%"));
+
+                // y_2
+                var y_2 = d3.scaleLinear()
+                    .domain(
+                        [d3.min(data, function (d) { if (d.date_year > 2018) { return +d.yoy - 0.1 } }),
+                        d3.max(data, function (d) { if (d.date_year > 2018) { return +d.yoy + 0.1 } })]
+                    )
+                    .range([height, 0]);
+                svg_2.append("g")
+                    .call(d3.axisLeft(y_2).ticks(10, "%"));
+
+                // Add the line
+                var path_1 = svg_1.append("path")
+                    .data([data])
+                    .attr("fill", "none")
+                    .attr("stroke", "#4b4b8b")
+                    .attr("stroke-width", 1.5)
+                    .attr("d", d3.line()
+                        .x(function (d) { { return x_1(d.date) } })
+                        .y(function (d) { return y_1(d.value) })
+                    )
+                var path_2 = svg_2.append("path")
+                    .datum(data.filter(function (d) { return d.date_year > 2018 }))
+                    .attr("fill", "none")
+                    .attr("stroke", "#4b4b8b")
+                    .attr("stroke-width", 1.5)
+                    .attr("d", d3.line()
+                        .x(function (d) { { return x_2(d.date) } })
+                        .y(function (d) { { return y_2(d.yoy) } })
+                    )
+
+                // Add Constant line in YoY Chart
+                svg_2.append("g")
+                    .attr("transform", "translate(0, " + y_2(0) + ")")
+                    .append("line")
+                    .attr("x2", width)
+                    .style("stroke", "grey")
+                    .style("stroke-width", "1px")
+                    .style("stroke-dasharray", ("3, 3"))
+
+                // Make Annotation
+                const annotations = [
+                    {
+                        note: {
+                            label: d3.timeFormat("%Y-%b")(data[data.length - 1].date)
+                                + " YoY: " + (data[data.length - 1].yoy * 100).toFixed(2) + "%",
+                            title: "YoY Record High (Past 3 Years)"
+                        },
+                        connector: {
+                            end: "dot",
+                            type: "line",
+                            lineType: "vertical",
+                            endScale: 1
+                        },
+                        x: x_2(data[data.length - 1].date),
+                        y: y_2(data[data.length - 1].yoy),
+                        dy: 20,
+                        dx: 10
+                    }
+                ]
+
+                // Add annotation to the chart
+                const makeAnnotations = d3.annotation()
+                    .annotations(annotations)
+                svg_2.append("g")
+                    .call(makeAnnotations)
+                    .style("font-size", "11px")
+                    .style("font-family", '"Lato", sans-serif')
+
+
+                var bisect = d3.bisector(function (d) { return d.date; }).left;
+
+                // Create the circle that travels along the curve of chart
+                var focus_1 = svg_1
+                    .append('g')
+                    .append('circle')
+                    .style("fill", "none")
+                    .attr("stroke", "black")
+                    .attr('r', 8.5)
+                    .style("opacity", 0)
+                var focus_2 = svg_2
+                    .append('g')
+                    .append('circle')
+                    .style("fill", "none")
+                    .attr("stroke", "black")
+                    .attr('r', 8.5)
+                    .style("opacity", 0)
+
+                // Create the text that travels along the curve of chart
+                var focusText_1 = svg_1
+                    .append('g')
+                    .append('text')
+                    .style("opacity", 0)
+                    .attr("text-anchor", "left")
+                    .attr("alignment-baseline", "middle")
+                var focusText_2 = svg_2
+                    .append('g')
+                    .append('text')
+                    .style("opacity", 0)
+                    .attr("text-anchor", "left")
+                    .attr("alignment-baseline", "middle")
+
+                svg_1
+                    .append('rect')
+                    .style("fill", "none")
+                    .style("pointer-events", "all")
+                    .attr('width', width)
+                    .attr('height', height)
+                    .on('mouseover', mouseover_1)
+                    .on('mousemove', mousemove_1)
+                    .on('mouseout', mouseout_1);
+
+                svg_2
+                    .append('rect')
+                    .style("fill", "none")
+                    .style("pointer-events", "all")
+                    .attr('width', width)
+                    .attr('height', height)
+                    .on('mouseover', mouseover_2)
+                    .on('mousemove', mousemove_2)
+                    .on('mouseout', mouseout_2);
+
+                // What happens when the mouse move -> show the annotations at the right positions.
+                function mouseover_1() {
+                    focus_1.style("opacity", 1)
+                    focusText_1.style("opacity", 1)
+                }
+                function mouseover_2() {
+                    focus_2.style("opacity", 1)
+                    focusText_2.style("opacity", 1)
+                }
+
+                function mousemove_1() {
+                    // recover coordinate we need
+                    var x0 = x_1.invert(d3.mouse(this)[0]);
+                    var i = bisect(data, x0, 1);
+                    selectedData = data[i]
+                    focus_1
+                        .attr("cx", x_1(selectedData.date))
+                        .attr("cy", y_1(selectedData.value))
+                    focusText_1
+                        //.html("x:" + selectedData.date + "  -  " + "y:" + selectedData.value)
+                        .html(
+                            d3.timeFormat("%Y-%b")(selectedData.date) + ":" +
+                            (selectedData.value * 100).toFixed(2) + "%"
+                        )
+                        .attr("x", x_1(selectedData.date) + 15)
+                        .attr("y", y_1(selectedData.value))
+                        .style("font-size", "11px")
+                        .style("font-family", '"Lato", sans-serif')
+                }
+                function mousemove_2() {
+                    // recover coordinate we need
+                    var x0 = x_2.invert(d3.mouse(this)[0]);
+                    var i = bisect(data, x0, 1);
+                    selectedData = data[i]
+                    focus_2
+                        .attr("cx", x_2(selectedData.date))
+                        .attr("cy", y_2(selectedData.yoy))
+                    focusText_2
+                        //.html("x:" + selectedData.date + "  -  " + "y:" + selectedData.value)
+                        .html(
+                            d3.timeFormat("%Y-%b")(selectedData.date) + ":" +
+                            (selectedData.yoy * 100).toFixed(2) + "%"
+                        )
+                        .attr("x", x_2(selectedData.date) + 15)
+                        .attr("y", y_2(selectedData.yoy))
+                        .style("font-size", "11px")
+                        .style("font-family", '"Lato", sans-serif')
+                }
+
+                function mouseout_1() {
+                    focus_1.style("opacity", 0)
+                    focusText_1.style("opacity", 0)
+                }
+                function mouseout_2() {
+                    focus_2.style("opacity", 0)
+                    focusText_2.style("opacity", 0)
+                }
+
+            })
+
+
+
+
+    </script>
+</body>

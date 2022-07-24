@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+
+<head>
+    <title>How is the house market?</title>
+</head>
+<!-- Font Import-->
+<link href="https://fonts.googleapis.com/css2?family=Lato&display=swap" rel="stylesheet">
+<!-- Custom CSS Import-->
+<link href="web.css" rel="stylesheet" />
+
+<body>
+    <div align="center">
+        <h1>How is the house market?</h1>
+        <h2>Try it yourself!</h2>
+    </div>
+    <div id="message" class="content">
+        <p>
+            Let's try to explore the data by your own decision! <br />
+            Location Selected: <b id="selectedLocation"></b>
+        </p>
+    </div>
+    <div class="container">
+        <div id="container_map" style="flex: 1;">
+        </div>
+        <div id="container_zhvi" style="flex: 1;">
+        </div>
+    </div>
+    <div class="container">
+        <div id="container_sales" style="flex: 1;">
+        </div>
+        <div id="container_zori" style="flex: 1;">
+        </div>
+    </div>
+    <div align="center">
+        <p></p>
+        <div class="pagination">
+            <a href="zori.html">«</a>
+            <a href="index.html">1</a>
+            <a href="mortgage.html">2</a>
+            <a href="zhvi.html">3</a>
+            <a href="sales.html">4</a>
+            <a href="zori.html">5</a>
+            <a class="active" href="diy.html">6</a>
+            <a href="summary.html">7</a>
+            <a href="summary.html">»</a>
+        </div>
+    </div>
+
+    <!-- Load d3.js -->
+    <script src="https://d3js.org/d3.v4.js"></script>
+    <script src="https://d3js.org/topojson.v2.min.js"></script>
+    <script src="https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js"></script>
+    <script type="text/javascript">
+        // set the dimensions and margins of the graph
+        var margin = { top: 10, right: 30, bottom: 30, left: 60 },
+            width = 500 - margin.left - margin.right,
+            height = 300 - margin.top - margin.bottom;
+
+
+        // Geo State Mapping
+        var names = {};
+        d3.tsv("proc_data/us-state-names.tsv", function (tsv) {
+            // extract just the names and Ids
+            tsv.forEach(function (d, i) {
+                names[d.id] = d.name;
+            });
+        });
+
+        var yearFormater = d3.timeFormat("%Y")
+        var monthFormater = d3.timeFormat("%b")
+        var ymdFormater = d3.timeParse("%Y-%m-%d")
+
+        // append the svg object to the body of the page
+        var svg_map = d3.select("#container_map").classed("svg-content", true)
+            .append("svg")
+            .attr("preserveAspectRatio", "xMinYMin meet")
+            .attr("viewBox", "0 0 1300 700")
+            .append("g")
+            .attr("transform",
+                "translate(" + margin.left + "," + margin.top + ")");
+
+        // append the svg object to the body of the page
+        var svg_zhvi = d3.select("#container_zhvi").classed("svg-content", true)
+            .append("svg")
+            .attr("preserveAspectRatio", "xMinYMin meet")
+            .attr("viewBox", "0 0 600 300")
+            .append("g")
+            .attr("transform",
+                "translate(" + margin.left + "," + margin.top + ")");
+
+        // append the svg object to the body of the page
+        var svg_sales = d3.select("#container_sales").classed("svg-content", true)
+            .append("svg")
+            .attr("preserveAspectRatio", "xMinYMin meet")
+            .attr("viewBox", "0 0 600 300")
+            .append("g")
+            .attr("transform",
+                "translate(" + margin.left + "," + margin.top + ")");
+
+        // append the svg object to the body of the page
+        var svg_zori = d3.select("#container_zori").classed("svg-content", true)
+            .append("svg")
+            .attr("preserveAspectRatio", "xMinYMin meet")
+            .attr("viewBox", "0 0 600 300")
+            .append("g")
+            .attr("transform",
+                "translate(" + margin.left + "," + margin.top + ")");
+
+        var globalSelectedGroup = "United States"
+        document.getElementById('selectedLocation').innerHTML = globalSelectedGroup;
+
+        d3.queue()
+            .defer(d3.json, "https://d3js.org/us-10m.v1.json")
+            .defer(d3.csv, "proc_data/zhvi.csv")
+            .defer(d3.csv, "proc_data/house_inventory.csv")
+            .defer(d3.csv, "proc_data/zori.csv")
+            .await(function (error, us, data_zhvi, data_sales, data_zori) {
+                if (error) throw error;
+
+                // US Map Data
+                var path_map = d3.geoPath();
+
+                svg_map.selectAll("#container_map path")
+                    .data(topojson.feature(us, us.objects.states).features)
+                    .enter().append("path")
+                    .attr("d", path_map)
+                    .attr("class", "region")
+                    .on("mouseover", function (d) {
+                        d3.select(this).attr("class", "region hover");
+                        d3.select(this).on("mouseout", function (d) {
+                            d3.select(this).attr("class", "region");
+                        })
+                    })
+                    .on("click", function (d) {
+                        if (d3.select(this).attr("class") != "selected") {
+                            svg_map.selectAll('#container_map path').attr('class', 'region'); // ensure every other feature is set to default
+                            d3.selectAll('#container_map path').on("mouseover", function (d) { // add a mouseover event to every feature in order to get the last one clicked
+                                d3.select(this).attr("class", "region hover");
+                                d3.select(this).on("mouseout", function (d) {
+                                    d3.select(this).attr("class", "region"); // add a mouseout event to every feature on mouseover
+                                });
+                            });
+                            //console.log(d3.select(this).attr("class"))
+                            if (this.class != "selected") {
+                                d3.select(this).on("mouseout", null); // cancel mouseover out events for the clicked feature.
+                                d3.select(this).on('mouseover', null);
+                                d3.select(this).attr('class', 'selected');
+                            }
+                            //console.log(d.id, names[(d.id * 1)])
+                            globalSelectedGroup = names[(d.id * 1)]
+                        } else {
+                            svg_map.selectAll('#container_map path').attr('class', 'region'); // ensure every other feature is set to default
+                            d3.selectAll('#container_map path').on("mouseover", function (d) { // add a mouseover event to every feature in order to get the last one clicked
+                                d3.select(this).attr("class", "region hover");
+                                d3.select(this).on("mouseout", function (d) {
+                                    d3.select(this).attr("class", "region"); // add a mouseout event to every feature on mouseover
+                                });
+                            });
+                            globalSelectedGroup = "United States"
+
+                        }
+                        document.getElementById('selectedLocation').innerHTML = globalSelectedGroup;
+                        update(globalSelectedGroup)
+
+                    });
+
+                // Group List
+                var allGroup = d3.map(
+                    data_zhvi.filter(function (d) { return d.StateName != "United States" }), function (d) { if (d.StateName != "United States" & d.StateName != "undefined") { return (d.StateName) } }
+                ).keys()
+                allGroup = d3.merge([["United States"], allGroup])
+
+                var bisect = d3.bisector(function (d) { return ymdFormater(d.date); }).left;
+
+
+                // ZHVI Data
+                var us_data_zhvi = data_zhvi.filter(function (d) { return d.StateName == allGroup[0] })
+
+                x_zhvi = d3.scaleTime()
+                    .domain(d3.extent(us_data_zhvi, function (d) { return ymdFormater(d.date); }))
+                    .range([0, width]);
+                svg_zhvi.append("g")
+                    .attr("transform", "translate(0," + height + ")")
+                    .call(d3.axisBottom(x_zhvi).ticks(6));
+
+                y_zhvi = d3.scaleLinear()
+                    .domain(
+                        [d3.min(us_data_zhvi, function (d) { return +d.value - 10000; }),
+                        d3.max(us_data_zhvi, function (d) { return +d.value + 10000; })]
+                    )
+                    .range([height, 0]);
+                y_axis_zhvi = svg_zhvi.append("g")
+                    .call(d3.axisLeft(y_zhvi).ticks(6));
+
+                path_zhvi = svg_zhvi.append("path")
+                    .datum(us_data_zhvi)
+                    .attr("fill", "none")
+                    .attr("stroke", "#4b4b8b")
+                    .attr("stroke-width", 1.5)
+                    .attr("d", d3.line()
+                        .x(function (d) { { return x_zhvi(ymdFormater(d.date)) } })
+                        .y(function (d) { return y_zhvi(d.value) })
+                    )
+
+                var focus_zhvi = svg_zhvi
+                    .append('g')
+                    .append('circle')
+                    .style("fill", "none")
+                    .attr("stroke", "black")
+                    .attr('r', 8.5)
+                    .style("opacity", 0)
+                var focusText_zhvi = svg_zhvi
+                    .append('g')
+                    .append('text')
+                    .style("opacity", 0)
+                    .attr("text-anchor", "left")
+                    .attr("alignment-baseline", "middle")
+
+                svg_zhvi
+                    .append('rect')
+                    .style("fill", "none")
+                    .style("pointer-events", "all")
+                    .attr('width', width)
+                    .attr('height', height)
+                    .on('mouseover', mouseover_zhvi)
+                    .on('mousemove', mousemove_zhvi)
+                    .on('mouseout', mouseout_zhvi);
+
+                function mouseover_zhvi() {
+                    focus_zhvi.style("opacity", 1)
+                    focusText_zhvi.style("opacity", 1)
+                }
+                function mousemove_zhvi() {
+                    // recover coordinate we need
+                    var dataFilter = data_zhvi.filter(function (d) { return d.StateName == globalSelectedGroup })
+                    var x0 = x_zhvi.invert(d3.mouse(this)[0]);
+                    var i = bisect(dataFilter, x0, 1);
+                    selectedData = dataFilter[i]
+                    focus_zhvi
+                        .attr("cx", x_zhvi(ymdFormater(selectedData.date)))
+                        .attr("cy", y_zhvi(selectedData.value))
+                    focusText_zhvi
+                        //.html("x:" + selectedData.date + "  -  " + "y:" + selectedData.value)
+                        .html(
+                            d3.timeFormat("%Y-%b")(ymdFormater(selectedData.date)) + ":" +
+                            (selectedData.value * 1).toFixed(0)
+                        )
+                        .attr("x", x_zhvi(ymdFormater(selectedData.date)) + 15)
+                        .attr("y", y_zhvi(selectedData.value))
+                        .style("font-size", "11px")
+                        .style("font-family", '"Lato", sans-serif')
+                }
+                function mouseout_zhvi() {
+                    focus_zhvi.style("opacity", 0)
+                    focusText_zhvi.style("opacity", 0)
+                }
+
+                // Sales Data
+                var us_data_sales = data_sales.filter(function (d) { return d.StateName == allGroup[0] })
+
+                x_sales = d3.scaleTime()
+                    .domain(d3.extent(us_data_sales, function (d) { return ymdFormater(d.date); }))
+                    .range([0, width]);
+                svg_sales.append("g")
+                    .attr("transform", "translate(0," + height + ")")
+                    .call(d3.axisBottom(x_sales).ticks(6));
+
+                y_sales = d3.scaleLinear()
+                    .domain(
+                        [d3.min(us_data_sales, function (d) { return +d.value - 10000; }),
+                        d3.max(us_data_sales, function (d) { return +d.value + 10000; })]
+                    )
+                    .range([height, 0]);
+                y_axis_sales = svg_sales.append("g")
+                    .call(d3.axisLeft(y_sales).ticks(6));
+
+                path_sales = svg_sales.append("path")
+                    .datum(us_data_sales)
+                    .attr("fill", "none")
+                    .attr("stroke", "#AC30C0")
+                    .attr("stroke-width", 1.5)
+                    .attr("d", d3.line()
+                        .x(function (d) { { return x_sales(ymdFormater(d.date)) } })
+                        .y(function (d) { return y_sales(d.value) })
+                    )
+
+                var focus_sales = svg_sales
+                    .append('g')
+                    .append('circle')
+                    .style("fill", "none")
+                    .attr("stroke", "black")
+                    .attr('r', 8.5)
+                    .style("opacity", 0)
+                var focusText_sales = svg_sales
+                    .append('g')
+                    .append('text')
+                    .style("opacity", 0)
+                    .attr("text-anchor", "left")
+                    .attr("alignment-baseline", "middle")
+
+                svg_sales
+                    .append('rect')
+                    .style("fill", "none")
+                    .style("pointer-events", "all")
+                    .attr('width', width)
+                    .attr('height', height)
+                    .on('mouseover', mouseover_sales)
+                    .on('mousemove', mousemove_sales)
+                    .on('mouseout', mouseout_sales);
+
+                function mouseover_sales() {
+                    focus_sales.style("opacity", 1)
+                    focusText_sales.style("opacity", 1)
+                }
+                function mousemove_sales() {
+                    // recover coordinate we need
+                    var dataFilter = data_sales.filter(function (d) { return d.StateName == globalSelectedGroup })
+                    var x0 = x_sales.invert(d3.mouse(this)[0]);
+                    var i = bisect(dataFilter, x0, 1);
+                    selectedData = dataFilter[i]
+                    focus_sales
+                        .attr("cx", x_sales(ymdFormater(selectedData.date)))
+                        .attr("cy", y_sales(selectedData.value))
+                    focusText_sales
+                        //.html("x:" + selectedData.date + "  -  " + "y:" + selectedData.value)
+                        .html(
+                            d3.timeFormat("%Y-%b")(ymdFormater(selectedData.date)) + ":" +
+                            (selectedData.value * 1).toFixed(0)
+                        )
+                        .attr("x", x_sales(ymdFormater(selectedData.date)) + 15)
+                        .attr("y", y_sales(selectedData.value))
+                        .style("font-size", "11px")
+                        .style("font-family", '"Lato", sans-serif')
+                }
+                function mouseout_sales() {
+                    focus_sales.style("opacity", 0)
+                    focusText_sales.style("opacity", 0)
+                }
+
+
+                // zori Data
+                var us_data_zori = data_zori.filter(function (d) { return d.StateName == allGroup[0] })
+
+                x_zori = d3.scaleTime()
+                    .domain(d3.extent(us_data_zori, function (d) { return ymdFormater(d.date); }))
+                    .range([0, width]);
+                svg_zori.append("g")
+                    .attr("transform", "translate(0," + height + ")")
+                    .call(d3.axisBottom(x_zori).ticks(6));
+
+                y_zori = d3.scaleLinear()
+                    .domain(
+                        [d3.min(us_data_zori, function (d) { return +d.value - 100; }),
+                        d3.max(us_data_zori, function (d) { return +d.value + 100; })]
+                    )
+                    .range([height, 0]);
+                y_axis_zori = svg_zori.append("g")
+                    .call(d3.axisLeft(y_zori).ticks(6));
+
+                path_zori = svg_zori.append("path")
+                    .datum(us_data_zori)
+                    .attr("fill", "none")
+                    .attr("stroke", "#A07A19")
+                    .attr("stroke-width", 1.5)
+                    .attr("d", d3.line()
+                        .x(function (d) { { return x_zori(ymdFormater(d.date)) } })
+                        .y(function (d) { return y_zori(d.value) })
+                    )
+
+                var focus_zori = svg_zori
+                    .append('g')
+                    .append('circle')
+                    .style("fill", "none")
+                    .attr("stroke", "black")
+                    .attr('r', 8.5)
+                    .style("opacity", 0)
+                var focusText_zori = svg_zori
+                    .append('g')
+                    .append('text')
+                    .style("opacity", 0)
+                    .attr("text-anchor", "left")
+                    .attr("alignment-baseline", "middle")
+
+                svg_zori
+                    .append('rect')
+                    .style("fill", "none")
+                    .style("pointer-events", "all")
+                    .attr('width', width)
+                    .attr('height', height)
+                    .on('mouseover', mouseover_zori)
+                    .on('mousemove', mousemove_zori)
+                    .on('mouseout', mouseout_zori);
+
+                function mouseover_zori() {
+                    focus_zori.style("opacity", 1)
+                    focusText_zori.style("opacity", 1)
+                }
+                function mousemove_zori() {
+                    // recover coordinate we need
+                    var dataFilter = data_zori.filter(function (d) { return d.StateName == globalSelectedGroup })
+                    var x0 = x_zori.invert(d3.mouse(this)[0]);
+                    var i = bisect(dataFilter, x0, 1);
+                    selectedData = dataFilter[i]
+                    focus_zori
+                        .attr("cx", x_zori(ymdFormater(selectedData.date)))
+                        .attr("cy", y_zori(selectedData.value))
+                    focusText_zori
+                        //.html("x:" + selectedData.date + "  -  " + "y:" + selectedData.value)
+                        .html(
+                            d3.timeFormat("%Y-%b")(ymdFormater(selectedData.date)) + ":" +
+                            (selectedData.value * 1).toFixed(0)
+                        )
+                        .attr("x", x_zori(ymdFormater(selectedData.date)) + 15)
+                        .attr("y", y_zori(selectedData.value))
+                        .style("font-size", "11px")
+                        .style("font-family", '"Lato", sans-serif')
+                }
+                function mouseout_zori() {
+                    focus_zori.style("opacity", 0)
+                    focusText_zori.style("opacity", 0)
+                }
+
+                function update(selectedGroup) {
+                    console.log(selectedGroup)
+
+                    var dataFilter_zhvi = data_zhvi.filter(function (d) { return d.StateName == selectedGroup })
+                    var dataFilter_sales = data_sales.filter(function (d) { return d.StateName == selectedGroup })
+                    var dataFilter_zori = data_zori.filter(function (d) { return d.StateName == selectedGroup })
+
+                    y_zhvi = d3.scaleLinear()
+                        .domain(
+                            [d3.min(dataFilter_zhvi, function (d) { return +d.value - 10000; }),
+                            d3.max(dataFilter_zhvi, function (d) { return +d.value + 10000; })]
+                        )
+                        .range([height, 0]);
+                    y_axis_zhvi.transition(1000).call(d3.axisLeft(y_zhvi).ticks(6));
+
+                    path_zhvi
+                        .datum(dataFilter_zhvi)
+                        .transition()
+                        .duration(1000)
+                        .attr("d", d3.line()
+                            .x(function (d) { { return x_zhvi(ymdFormater(d.date)) } })
+                            .y(function (d) { return y_zhvi(d.value) })
+                        )
+
+                    y_sales = d3.scaleLinear()
+                        .domain(
+                            [d3.min(dataFilter_sales, function (d) { return +d.value - 10000; }),
+                            d3.max(dataFilter_sales, function (d) { return +d.value + 10000; })]
+                        )
+                        .range([height, 0]);
+                    y_axis_sales.transition(1000).call(d3.axisLeft(y_sales).ticks(6));
+
+                    path_sales
+                        .datum(dataFilter_sales)
+                        .transition()
+                        .duration(1000)
+                        .attr("d", d3.line()
+                            .x(function (d) { { return x_sales(ymdFormater(d.date)) } })
+                            .y(function (d) { return y_sales(d.value) })
+                        )
+
+                    y_zori = d3.scaleLinear()
+                        .domain(
+                            [d3.min(dataFilter_zori, function (d) { return +d.value - 100; }),
+                            d3.max(dataFilter_zori, function (d) { return +d.value + 100; })]
+                        )
+                        .range([height, 0]);
+                    y_axis_zori.transition(1000).call(d3.axisLeft(y_zori).ticks(6));
+
+                    path_zori
+                        .datum(dataFilter_zori)
+                        .transition()
+                        .duration(1000)
+                        .attr("d", d3.line()
+                            .x(function (d) { { return x_zori(ymdFormater(d.date)) } })
+                            .y(function (d) { return y_zori(d.value) })
+                        )
+
+                }
+
+            });
+
+
+
+
+
+
+
+
+    </script>
+</body>
