@@ -115,7 +115,7 @@
 
                 var myColor = d3.scaleOrdinal()
                     .domain(allGroup)
-                    .range(["#A07A19", "#AC30C0", "#EB9A72", "#BA86F5", "#EA22A8"]);
+                    .range(["#EA22A8"]);
 
                 // add the options to the button
                 d3.select("#selectButton")
@@ -174,7 +174,7 @@
                         .x(function (d) { { return x_1(d.date) } })
                         .y(function (d) { return y_1(d.value) })
                     )
-                    .attr("stroke", function (d) { return myColor("valueA") })
+                    .attr("stroke", function (d) { return myColor(d.StateName) })
 
                 var path_2 = svg_2.append("path")
                     .datum(us_data.filter(function (d) { return d.date_year > 2018 }))
@@ -185,7 +185,7 @@
                         .x(function (d) { { return x_2(d.date) } })
                         .y(function (d) { { return y_2(d.yoy) } })
                     )
-                    .attr("stroke", function (d) { return myColor("valueA") })
+                    .attr("stroke", function (d) { return myColor(d.StateName) })
 
                 // Add Constant line in YoY Chart
                 svg_2.append("g")
@@ -196,6 +196,36 @@
                     .style("stroke", "grey")
                     .style("stroke-width", "1px")
                     .style("stroke-dasharray", ("3, 3"))
+
+                svg_1.append("text")
+                    .attr("x", width / 2)
+                    .attr("y", 10 - (margin.top / 2))
+                    .attr("text-anchor", "middle")
+                    .style("font-size", "12px")
+                    .text("Zillow House Value Index (ZHVI) Trend");
+
+                svg_2.append("text")
+                    .attr("x", width / 2)
+                    .attr("y", 10 - (margin.top / 2))
+                    .attr("text-anchor", "middle")
+                    .style("font-size", "12px")
+                    .text("Zillow House Value Index (ZHVI) YoY% Trend");
+
+                svg_1.append("text")
+                    .attr("transform", "rotate(-90)")
+                    .attr("x", -(height / 2))
+                    .attr("y", -50)
+                    .style("text-anchor", "middle")
+                    .style("font-size", "10px")
+                    .text("ZHVI");
+
+                svg_2.append("text")
+                    .attr("transform", "rotate(-90)")
+                    .attr("x", -(height / 2))
+                    .attr("y", -40)
+                    .style("text-anchor", "middle")
+                    .style("font-size", "10px")
+                    .text("YoY%");
 
                 // A function that update the chart
                 function update(selectedGroup) {
@@ -283,6 +313,7 @@
                             lineType: "vertical",
                             endScale: 1
                         },
+                        color: ["red"],
                         x: x_1(us_data[us_data.length - 1].date),
                         y: y_1(us_data[us_data.length - 1].value),
                         dy: 20,
@@ -299,6 +330,7 @@
                             lineType: "vertical",
                             endScale: 1
                         },
+                        color: ["red"],
                         x: x_1(us_data[us_data.length - 13].date),
                         y: y_1(us_data[us_data.length - 13].value),
                         dy: -20,
@@ -317,6 +349,7 @@
                             lineType: "vertical",
                             endScale: 1
                         },
+                        color: ["red"],
                         x: x_2(us_data[us_data.length - 1].date),
                         y: y_2(us_data[us_data.length - 1].yoy),
                         dy: 20,
@@ -327,6 +360,7 @@
                             label: (us_data[us_data.length - 3].yoy * 100).toFixed(2) + "%",
                             title: d3.timeFormat("%Y-%b")(us_data[us_data.length - 3].date) + " YoY:"
                         },
+                        color: ["red"],
                         connector: {
                             end: "dot",
                             type: "line",

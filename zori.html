@@ -114,7 +114,7 @@
 
                 var myColor = d3.scaleOrdinal()
                     .domain(allGroup)
-                    .range(["#A07A19", "#AC30C0", "#EB9A72", "#BA86F5", "#EA22A8"]);
+                    .range(["#A07A19"]);
 
                 // add the options to the button
                 d3.select("#selectButton")
@@ -195,6 +195,36 @@
                     .style("stroke", "grey")
                     .style("stroke-width", "1px")
                     .style("stroke-dasharray", ("3, 3"))
+
+                svg_1.append("text")
+                    .attr("x", width / 2)
+                    .attr("y", 10 - (margin.top / 2))
+                    .attr("text-anchor", "middle")
+                    .style("font-size", "12px")
+                    .text("Zillow Observed Rent Index (ZORI) Trend");
+
+                svg_2.append("text")
+                    .attr("x", width / 2)
+                    .attr("y", 10 - (margin.top / 2))
+                    .attr("text-anchor", "middle")
+                    .style("font-size", "12px")
+                    .text("Zillow Observed Rent Index (ZORI) YoY% Trend");
+
+                svg_1.append("text")
+                    .attr("transform", "rotate(-90)")
+                    .attr("x", -(height / 2))
+                    .attr("y", -50)
+                    .style("text-anchor", "middle")
+                    .style("font-size", "10px")
+                    .text("ZORI");
+
+                svg_2.append("text")
+                    .attr("transform", "rotate(-90)")
+                    .attr("x", -(height / 2))
+                    .attr("y", -40)
+                    .style("text-anchor", "middle")
+                    .style("font-size", "10px")
+                    .text("YoY%");
 
                 // A function that update the chart
                 function update(selectedGroup) {
@@ -280,6 +310,7 @@
                             lineType: "vertical",
                             endScale: 1
                         },
+                        color: ["red"],
                         x: x_1(us_data[us_data.length - 1].date),
                         y: y_1(us_data[us_data.length - 1].value),
                         dy: 20,
@@ -292,6 +323,7 @@
                             ).toFixed(2) + "%",
                             title: d3.timeFormat("%Y-%b")(us_data[us_data.length - 2].date) + "\n&" + d3.timeFormat("%Y-%b")(us_data[us_data.length - 1].date) + ""
                         },
+                        color: ["red"],
                         connector: {
                             end: "dot",
                             type: "line",
@@ -310,6 +342,7 @@
                             lineType: "vertical",
                             endScale: 1
                         },
+                        color: ["red"],
                         x: x_1(us_data[us_data.length - 1].date),
                         y: y_1(us_data[us_data.length - 1].value),
                         dy: 6,
@@ -322,6 +355,7 @@
                             label: (us_data[us_data.length - 1].yoy * 100).toFixed(2) + "%",
                             title: d3.timeFormat("%Y-%b")(us_data[us_data.length - 1].date) + " YoY:"
                         },
+                        color: ["red"],
                         connector: {
                             end: "dot",
                             type: "line",
@@ -338,6 +372,7 @@
                             label: (us_data[us_data.length - 2].yoy * 100).toFixed(2) + "%",
                             title: d3.timeFormat("%Y-%b")(us_data[us_data.length - 2].date) + " YoY:"
                         },
+                        color: ["red"],
                         connector: {
                             end: "dot",
                             type: "line",
@@ -354,6 +389,7 @@
                             label: (us_data[us_data.length - 5].yoy * 100).toFixed(2) + "%",
                             title: d3.timeFormat("%Y-%b")(us_data[us_data.length - 5].date) + " YoY:"
                         },
+                        color: ["red"],
                         connector: {
                             end: "dot",
                             type: "line",

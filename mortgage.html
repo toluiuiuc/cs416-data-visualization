@@ -168,6 +168,36 @@
                     .style("stroke-width", "1px")
                     .style("stroke-dasharray", ("3, 3"))
 
+                svg_1.append("text")
+                    .attr("x", width / 2)
+                    .attr("y", 10 - (margin.top / 2))
+                    .attr("text-anchor", "middle")
+                    .style("font-size", "12px")
+                    .text("Mortgage Interest Rate Trend");
+
+                svg_2.append("text")
+                    .attr("x", width / 2)
+                    .attr("y", 10 - (margin.top / 2))
+                    .attr("text-anchor", "middle")
+                    .style("font-size", "12px")
+                    .text("Mortgage Interest Rate YoY% Trend");
+
+                svg_1.append("text")
+                    .attr("transform", "rotate(-90)")
+                    .attr("x", -(height / 2))
+                    .attr("y", -40)
+                    .style("text-anchor", "middle")
+                    .style("font-size", "10px")
+                    .text("Mortgage Interest Rate");
+
+                svg_2.append("text")
+                    .attr("transform", "rotate(-90)")
+                    .attr("x", -(height / 2))
+                    .attr("y", -40)
+                    .style("text-anchor", "middle")
+                    .style("font-size", "10px")
+                    .text("YoY%");
+
                 // Make Annotation
                 const annotations = [
                     {
@@ -182,6 +212,7 @@
                             lineType: "vertical",
                             endScale: 1
                         },
+                        color: ["red"],
                         x: x_2(data[data.length - 1].date),
                         y: y_2(data[data.length - 1].yoy),
                         dy: 20,

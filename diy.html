@@ -79,6 +79,13 @@
             .attr("transform",
                 "translate(" + margin.left + "," + margin.top + ")");
 
+        svg_map.append("text")
+            .attr("x", width / 2)
+            .attr("y", 10 - (margin.top / 2))
+            .attr("text-anchor", "middle")
+            .style("font-size", "20px")
+            .text("Zillow Observed Rent Index (ZORI) YoY% in 2022-Jun");
+
         // append the svg object to the body of the page
         var svg_zhvi = d3.select("#container_zhvi").classed("svg-content", true)
             .append("svg")
@@ -87,6 +94,13 @@
             .append("g")
             .attr("transform",
                 "translate(" + margin.left + "," + margin.top + ")");
+
+        svg_zhvi.append("text")
+            .attr("x", width / 2)
+            .attr("y", 10 - (margin.top / 2))
+            .attr("text-anchor", "middle")
+            .style("font-size", "12px")
+            .text("Zillow House Value Index (ZHVI) Trend");
 
         // append the svg object to the body of the page
         var svg_sales = d3.select("#container_sales").classed("svg-content", true)
@@ -97,6 +111,13 @@
             .attr("transform",
                 "translate(" + margin.left + "," + margin.top + ")");
 
+        svg_sales.append("text")
+            .attr("x", width / 2)
+            .attr("y", 10 - (margin.top / 2))
+            .attr("text-anchor", "middle")
+            .style("font-size", "12px")
+            .text("For-Sales Inventory Trend");
+
         // append the svg object to the body of the page
         var svg_zori = d3.select("#container_zori").classed("svg-content", true)
             .append("svg")
@@ -105,6 +126,13 @@
             .append("g")
             .attr("transform",
                 "translate(" + margin.left + "," + margin.top + ")");
+
+        svg_zori.append("text")
+            .attr("x", width / 2)
+            .attr("y", 10 - (margin.top / 2))
+            .attr("text-anchor", "middle")
+            .style("font-size", "12px")
+            .text("Zillow Observed Rent Index (ZORI) Trend");
 
         var globalSelectedGroup = "United States"
         document.getElementById('selectedLocation').innerHTML = globalSelectedGroup;
@@ -120,40 +148,61 @@
                 // US Map Data
                 var path_map = d3.geoPath();
 
+                // ZHVI Latest YoY Compare
+                var zhvi_yoy = data_zhvi.filter(
+                    function (d) { return d3.timeFormat("%Y-%b")(ymdFormater(d.date)) == "2022-Jun" }
+                )
+
+                function update_color(d) {
+                    return color(
+                        (zhvi_yoy.filter(function (a) { return a.StateName == names[d.id * 1] }))[0].yoy
+                    )
+                }
+
+                // Color Indicator
+                var color = d3.scaleLinear()
+                    .domain([0, d3.max(zhvi_yoy, function (d) { return +d.yoy; })])
+                    .range(["white", "green"]);
+
                 svg_map.selectAll("#container_map path")
                     .data(topojson.feature(us, us.objects.states).features)
                     .enter().append("path")
                     .attr("d", path_map)
                     .attr("class", "region")
+                    .style("fill", update_color)
                     .on("mouseover", function (d) {
-                        d3.select(this).attr("class", "region hover");
+                        //d3.select(this).attr("class", "region hover");
+                        d3.select(this).style("fill", "grey");
                         d3.select(this).on("mouseout", function (d) {
-                            d3.select(this).attr("class", "region");
+                            d3.select(this).style("fill", update_color);
                         })
                     })
                     .on("click", function (d) {
-                        if (d3.select(this).attr("class") != "selected") {
-                            svg_map.selectAll('#container_map path').attr('class', 'region'); // ensure every other feature is set to default
+                        if (d3.select(this).style("fill") != "orange") {
+                            //svg_map.selectAll('#container_map path').attr('class', 'region'); // ensure every other feature is set to default
+                            svg_map.selectAll('#container_map path').style("fill", update_color)
                             d3.selectAll('#container_map path').on("mouseover", function (d) { // add a mouseover event to every feature in order to get the last one clicked
-                                d3.select(this).attr("class", "region hover");
+                                //d3.select(this).attr("class", "region hover");
+                                d3.select(this).style("fill", "grey");
                                 d3.select(this).on("mouseout", function (d) {
-                                    d3.select(this).attr("class", "region"); // add a mouseout event to every feature on mouseover
+                                    d3.select(this).style("fill", update_color); // add a mouseout event to every feature on mouseover
                                 });
                             });
                             //console.log(d3.select(this).attr("class"))
-                            if (this.class != "selected") {
-                                d3.select(this).on("mouseout", null); // cancel mouseover out events for the clicked feature.
-                                d3.select(this).on('mouseover', null);
-                                d3.select(this).attr('class', 'selected');
-                            }
+
+                            d3.select(this).on("mouseout", null); // cancel mouseover out events for the clicked feature.
+                            d3.select(this).on('mouseover', null);
+                            //d3.select(this).attr('class', 'selected');
+                            d3.select(this).style('fill', 'orange');
+
                             //console.log(d.id, names[(d.id * 1)])
                             globalSelectedGroup = names[(d.id * 1)]
                         } else {
-                            svg_map.selectAll('#container_map path').attr('class', 'region'); // ensure every other feature is set to default
+                            svg_map.selectAll('#container_map path').style("fill", update_color); // ensure every other feature is set to default
                             d3.selectAll('#container_map path').on("mouseover", function (d) { // add a mouseover event to every feature in order to get the last one clicked
-                                d3.select(this).attr("class", "region hover");
+                                d3.select(this).style("fill", "grey");
                                 d3.select(this).on("mouseout", function (d) {
-                                    d3.select(this).attr("class", "region"); // add a mouseout event to every feature on mouseover
+                                    d3.select(this).style("fill", update_color); // add a mouseout event to every feature on mouseover
                                 });
                             });
                             globalSelectedGroup = "United States"
@@ -195,7 +244,7 @@
                 path_zhvi = svg_zhvi.append("path")
                     .datum(us_data_zhvi)
                     .attr("fill", "none")
-                    .attr("stroke", "#4b4b8b")
+                    .attr("stroke", "#EA22A8")
                     .attr("stroke-width", 1.5)
                     .attr("d", d3.line()
                         .x(function (d) { { return x_zhvi(ymdFormater(d.date)) } })
@@ -268,7 +317,7 @@
                 y_sales = d3.scaleLinear()
                     .domain(
                         [d3.min(us_data_sales, function (d) { return +d.value - 10000; }),
-                        d3.max(us_data_sales, function (d) { return +d.value + 10000; })]
+                        d3.max(us_data_sales, function (d) { return +d.value + 100000; })]
                     )
                     .range([height, 0]);
                 y_axis_sales = svg_sales.append("g")
@@ -277,7 +326,7 @@
                 path_sales = svg_sales.append("path")
                     .datum(us_data_sales)
                     .attr("fill", "none")
-                    .attr("stroke", "#AC30C0")
+                    .attr("stroke", "#EB9A72")
                     .attr("stroke-width", 1.5)
                     .attr("d", d3.line()
                         .x(function (d) { { return x_sales(ymdFormater(d.date)) } })
@@ -444,10 +493,16 @@
                             .y(function (d) { return y_zhvi(d.value) })
                         )
 
+
+                    if (globalSelectedGroup == "United States") {
+                        var y_sales_max_diff = 100000
+                    } else {
+                        var y_sales_max_diff = 1000
+                    }
                     y_sales = d3.scaleLinear()
                         .domain(
-                            [d3.min(dataFilter_sales, function (d) { return +d.value - 10000; }),
-                            d3.max(dataFilter_sales, function (d) { return +d.value + 10000; })]
+                            [d3.min(dataFilter_sales, function (d) { return +d.value - y_sales_max_diff; }),
+                            d3.max(dataFilter_sales, function (d) { return +d.value + y_sales_max_diff; })]
                         )
                         .range([height, 0]);
                     y_axis_sales.transition(1000).call(d3.axisLeft(y_sales).ticks(6));
